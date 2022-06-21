@@ -66,18 +66,6 @@ explore: order_items {
     sql_on: ${order_facts.order_id} = ${order_items.order_id} ;;
   }
 
-  join: customer_patterns {
-    type: left_outer
-    sql_on: ${order_items.user_id} = ${customer_patterns.user_id} ;;
-    relationship: many_to_one
-  }
-
-  join: customer_info {
-    type: left_outer
-    sql_on: ${users.id} = ${customer_info.user_id} ;;
-    relationship: one_to_one
-  }
-
   join: users {
     type: left_outer
     sql_on: ${order_items.user_id} = ${users.id} ;;
