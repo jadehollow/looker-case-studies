@@ -4,26 +4,12 @@ connection: "looker_partner_demo"
 # include all the views
 include: "/views/**/*.view"
 
-# Datagroups define a caching policy for an Explore. To learn more,
-# use the Quick Help panel on the right to see documentation.
-
-datagroup: jade_cs_default_datagroup {
-  # sql_trigger: SELECT MAX(id) FROM etl_log;;
-  max_cache_age: "1 hour"
+datagroup: ecommerce_etl {
+  sql_trigger: SELECT max(created_at) FROM ecomm.events ;;
+  max_cache_age: "24 hours"
 }
 
-persist_with: jade_cs_default_datagroup
-
-# Explores allow you to join together different views (database tables) based on the
-# relationships between fields. By joining a view into an Explore, you make those
-# fields available to users for data analysis.
-# Explores should be purpose-built for specific use cases.
-
-# To see the Explore you’re building, navigate to the Explore menu and select an Explore under "Jade Cs"
-
-# To create more sophisticated Explores that involve multiple views, you can use the join parameter.
-# Typically, join parameters require that you define the join type, join relationship, and a sql_on clause.
-# Each joined view also needs to define a primary key.
+persist_with: ecommerce_etl
 
 explore: users {}
 
@@ -60,6 +46,38 @@ explore: events {
 }
 
 explore: order_items {
+  view_name: order_items
+
+  join: repeat_purchase_facts {
+    relationship: many_to_one
+    type: full_outer
+    sql_on: ${order_items.order_id} = ${repeat_purchase_facts.order_id} ;;
+  }
+
+  join: user_order_facts {
+    type: left_outer
+    relationship: many_to_one
+    sql_on: ${user_order_facts.user_id} = ${order_items.user_id} ;;
+  }
+
+  join: order_facts {
+    type: left_outer
+    relationship: many_to_one
+    sql_on: ${order_facts.order_id} = ${order_items.order_id} ;;
+  }
+
+  join: customer_patterns {
+    type: left_outer
+    sql_on: ${order_items.user_id} = ${customer_patterns.user_id} ;;
+    relationship: many_to_one
+  }
+
+  join: customer_info {
+    type: left_outer
+    sql_on: ${users.id} = ${customer_info.user_id} ;;
+    relationship: one_to_one
+  }
+
   join: users {
     type: left_outer
     sql_on: ${order_items.user_id} = ${users.id} ;;
@@ -67,9 +85,9 @@ explore: order_items {
   }
 
   join: inventory_items {
-    type: left_outer
+    type: full_outer
     sql_on: ${order_items.inventory_item_id} = ${inventory_items.id} ;;
-    relationship: many_to_one
+    relationship: one_to_one
   }
 
   join: products {
